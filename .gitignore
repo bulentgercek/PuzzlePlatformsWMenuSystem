@@ -4,7 +4,6 @@ Binaries/
 Build/
 DerivedDataCache/
 Intermediate/
-Package/
 Saved/
 *.code-workspace
 *.sln
