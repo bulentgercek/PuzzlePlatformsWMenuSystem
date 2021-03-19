@@ -13,6 +13,8 @@ class PUZZLEPLATFORMS_API UGameMenu : public UMenuBase
 	GENERATED_BODY()
 
 private:
+	int DiagramFix;
+
 	UPROPERTY(meta = (BindWidget))
 	class UButton* GameMenuMainMenuButton;
 

@@ -2,8 +2,10 @@
 
 
 #include "PlatformTrigger.h"
+
 #include "Components/BoxComponent.h"
 #include "Components/StaticMeshComponent.h"
+
 #include "MovingPlatform.h"
 
 

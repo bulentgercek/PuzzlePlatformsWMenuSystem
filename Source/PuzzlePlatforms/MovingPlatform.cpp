@@ -2,6 +2,7 @@
 
 
 #include "MovingPlatform.h"
+
 #include "GameFramework/ProjectileMovementComponent.h"
 
 

@@ -2,9 +2,22 @@
 
 
 #include "MainMenu.h"
+
 #include "Components/Button.h"
 #include "Components/WidgetSwitcher.h"
 #include "Components/EditableTextBox.h"
+#include "Components/TextBlock.h"
+#include "OnlineSessionSettings.h"
+
+#include "ServerRow.h"
+
+
+UMainMenu::UMainMenu(const FObjectInitializer & ObjectInitializer) 
+{
+    static ConstructorHelpers::FClassFinder<UUserWidget> WBP_ServerRowClass(TEXT("/Game/MenuSystem/UI/WBP_ServerRow"));
+    if (!ensure(WBP_ServerRowClass.Class != nullptr)) return;
+    ServerRowClass = WBP_ServerRowClass.Class;
+}
 
 
 bool UMainMenu::Initialize() 
@@ -48,6 +61,10 @@ void UMainMenu::SwitchToJoinMenu()
     if (!ensure(MenuSwitcher != nullptr)) return;
     if (!ensure(JoinMenu != nullptr)) return;
     MenuSwitcher->SetActiveWidget(JoinMenu);
+    if (MenuInterface != nullptr)
+    {
+        MenuInterface->RefreshServerList();
+    }
 }
 
 
@@ -59,12 +76,47 @@ void UMainMenu::SwitchToMainMenu()
 }
 
 
+void UMainMenu::SetServerList(TArray<FString>& ServerNames) 
+{
+    JoinServerListScrollBox->ClearChildren();
+
+    uint32 count = 0;
+
+    for (const FString& ServerName : ServerNames)
+    {
+        UServerRow* ServerRow = CreateWidget<UServerRow>(this, ServerRowClass);
+        if (!ensure(ServerRow != nullptr)) return;
+
+        ServerRow->ServerName->SetText(FText::FromString(ServerName));
+        ServerRow->Setup(this, count);
+        ++count;
+
+        JoinServerListScrollBox->AddChild(ServerRow);
+    }
+}
+
+
+void UMainMenu::SelectIndex(uint32 Index) 
+{
+    SelectedIndex = Index;
+}
+
+
 void UMainMenu::JoinServer() 
 {
+    if (SelectedIndex.IsSet())
+    {
+        UE_LOG(LogTemp, Warning, TEXT("Selected Index %d"), SelectedIndex.GetValue());
+    }
+    else
+    {
+        UE_LOG(LogTemp, Warning, TEXT("Selected Index no set."));
+    }
+
     if (MenuInterface != nullptr)
     {
-        const FString& IpAddress = IpAddressTextBox->GetText().ToString();
-        MenuInterface->Join(IpAddress);
+        // const FString& IpAddress = IpAddressTextBox->GetText().ToString();
+        MenuInterface->Join("");
     }
 }
 

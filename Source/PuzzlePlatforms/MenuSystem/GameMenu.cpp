@@ -2,6 +2,7 @@
 
 
 #include "GameMenu.h"
+
 #include "Components/Button.h"
 #include "../PuzzlePlatformsGameInstance.h"
 #include "Kismet/GameplayStatics.h"
@@ -32,9 +33,10 @@ void UGameMenu::CloseGameMenu()
 
 void UGameMenu::QuitToMainMenu() 
 {
-    if (MenuInterface != nullptr)
-    {
-        UMenuBase::Teardown();
-        MenuInterface->QuitToMainMenu();
-    }
+    APlayerController* PlayerController = GetWorld()->GetFirstPlayerController();
+    if (!ensure(PlayerController != nullptr)) return;
+
+    UMenuBase::Teardown();
+    
+    PlayerController->ClientTravel("/Game/MenuSystem/Maps/MainMenu", ETravelType::TRAVEL_Absolute);
 }

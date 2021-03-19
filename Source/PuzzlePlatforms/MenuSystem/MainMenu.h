@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "MenuBase.h"
+
 #include "MainMenu.generated.h"
 
 
@@ -29,7 +30,7 @@ private:
 	class UButton* JoinButton;
 
 	UPROPERTY(meta = (BindWidget))
-	class UEditableTextBox* IpAddressTextBox;
+	class UPanelWidget* JoinServerListScrollBox;
 
 	UPROPERTY(meta = (BindWidget))
 	class UButton* JoinGameButton;
@@ -39,6 +40,8 @@ private:
 
 	UPROPERTY(meta = (BindWidget))
 	class UButton* MainMenuQuitButton;
+
+	TSubclassOf<class UUserWidget> ServerRowClass;
 
 private:
 	UFUNCTION()
@@ -56,7 +59,16 @@ private:
 	UFUNCTION()
 	void QuitGame();
 
+	TOptional<uint32> SelectedIndex;
+
 protected:
 	virtual bool Initialize();
+
+public:
+	UMainMenu(const FObjectInitializer& ObjectInitializer);
+
+	void SetServerList(TArray<FString>& ServerNames);
+
+	void SelectIndex(uint32 Index);
 
 };
