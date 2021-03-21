@@ -29,7 +29,13 @@ bool UMainMenu::Initialize()
 
     // Assign Menu Buttons
     if (!ensure(HostButton != nullptr)) return false;
-    HostButton->OnClicked.AddDynamic(this, &UMainMenu::HostServer);
+    HostButton->OnClicked.AddDynamic(this, &UMainMenu::SwitchToHostMenu);
+
+    if (!ensure(JoinButton != nullptr)) return false;
+    HostCancelButton->OnClicked.AddDynamic(this, &UMainMenu::SwitchToMainMenu);
+
+    if (!ensure(JoinButton != nullptr)) return false;
+    HostStartButton->OnClicked.AddDynamic(this, &UMainMenu::HostServer);
 
     if (!ensure(JoinButton != nullptr)) return false;
     JoinButton->OnClicked.AddDynamic(this, &UMainMenu::SwitchToJoinMenu);
@@ -51,8 +57,17 @@ void UMainMenu::HostServer()
 {
     if (MenuInterface != nullptr)
     {
-        MenuInterface->Host();
+        FName HostName = FName(*HostNameEditableBox->GetText().ToString());
+        MenuInterface->Host(HostName);
     }
+}
+
+
+void UMainMenu::SwitchToHostMenu()
+{
+    if (!ensure(MenuSwitcher != nullptr)) return;
+    if (!ensure(HostMenu != nullptr)) return;
+    MenuSwitcher->SetActiveWidget(HostMenu);
 }
 
 
@@ -76,18 +91,21 @@ void UMainMenu::SwitchToMainMenu()
 }
 
 
-void UMainMenu::SetServerList(TArray<FString>& ServerNames) 
+void UMainMenu::SetServerList(TArray<FServerData>& ServerNames) 
 {
     JoinServerListScrollBox->ClearChildren();
 
     uint32 count = 0;
 
-    for (const FString& ServerName : ServerNames)
+    for (const FServerData& ServerData : ServerNames)
     {
         UServerRow* ServerRow = CreateWidget<UServerRow>(this, ServerRowClass);
         if (!ensure(ServerRow != nullptr)) return;
 
-        ServerRow->ServerName->SetText(FText::FromString(ServerName));
+        ServerRow->ServerName->SetText(FText::FromString(ServerData.ServerName));
+        ServerRow->HostUser->SetText(FText::FromString(ServerData.HostUsername));
+        FString FractionText = FString::Printf(TEXT("%d/%d"), ServerData.CurrentPlayers, ServerData.MaxPlayers);
+        ServerRow->ConnectionFraction->SetText(FText::FromString(FractionText));
         ServerRow->Setup(this, count);
         ++count;
 
@@ -99,27 +117,36 @@ void UMainMenu::SetServerList(TArray<FString>& ServerNames)
 void UMainMenu::SelectIndex(uint32 Index) 
 {
     SelectedIndex = Index;
+    UpdateChildren();
+}
+
+
+void UMainMenu::UpdateChildren()
+{
+    for (int32 i = 0; i < JoinServerListScrollBox->GetChildrenCount(); ++i)
+    {
+        UServerRow* ServerRow = Cast<UServerRow>(JoinServerListScrollBox->GetChildAt(i));
+        if (ServerRow != nullptr)
+        {
+            ServerRow->Selected = (SelectedIndex.IsSet() && SelectedIndex.GetValue() == i);
+        }
+
+    }
 }
 
 
 void UMainMenu::JoinServer() 
 {
-    if (SelectedIndex.IsSet())
+    if (SelectedIndex.IsSet() && MenuInterface != nullptr)
     {
         UE_LOG(LogTemp, Warning, TEXT("Selected Index %d"), SelectedIndex.GetValue());
+        MenuInterface->Join(SelectedIndex.GetValue());
     }
     else
     {
         UE_LOG(LogTemp, Warning, TEXT("Selected Index no set."));
     }
-
-    if (MenuInterface != nullptr)
-    {
-        // const FString& IpAddress = IpAddressTextBox->GetText().ToString();
-        MenuInterface->Join("");
-    }
 }
-
 
 void UMainMenu::QuitGame() 
 {

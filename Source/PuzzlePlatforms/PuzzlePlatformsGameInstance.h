@@ -3,9 +3,12 @@
 #pragma once
 
 #include "CoreMinimal.h"
+
 #include "Engine/GameInstance.h"
 #include "MenuSystem/MenuInterface.h"
 #include "OnlineSubsystem.h"
+#include "Interfaces/OnlineSessionInterface.h"
+
 #include "PuzzlePlatformsGameInstance.generated.h"
 
 
@@ -24,8 +27,10 @@ private:
 
 	TSharedPtr<class FOnlineSessionSearch> SessionSearch;
 
+	FName HostNameFromMainMenu;
+
 private:
-	void CreateSession(FName SessionName);
+	void CreateSession();
 
 	void OnCreateSessionComplete(FName SessionName, bool Success);
 
@@ -34,6 +39,8 @@ private:
 	void FindSessions();
 
 	void OnFindSessionsComplete(bool Success);
+
+	void OnJoinSessionComplete(FName SessionName, EOnJoinSessionCompleteResult::Type Result);
 
 public:
 	UPuzzlePlatformsGameInstance(const FObjectInitializer& ObjectInitializer);
@@ -47,10 +54,10 @@ public:
 	void LoadGameMenu();
 
 	UFUNCTION(Exec)
-	virtual void Host() override;
+	virtual void Host(FName HostName) override;
 	
 	UFUNCTION(Exec)
-	virtual void Join(const FString& IpAddress) override;
+	virtual void Join(uint32 Index) override;
 
 	UFUNCTION(Exec)
 	virtual void RefreshServerList() override;
