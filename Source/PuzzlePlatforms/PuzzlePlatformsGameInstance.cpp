@@ -12,6 +12,8 @@
 #include "MenuSystem/GameMenu.h"
 #include "MenuSystem/ServerRow.h"
 
+static const FName SESSION_NAME = NAME_GameSession;
+const static FName SERVER_NAME_SETTINGS_KEY = TEXT("ServerName");
 
 UPuzzlePlatformsGameInstance::UPuzzlePlatformsGameInstance(const FObjectInitializer& ObjectInitializer) 
 {
@@ -39,8 +41,11 @@ void UPuzzlePlatformsGameInstance::Init()
         SessionInterface->OnDestroySessionCompleteDelegates.AddUObject(this, &UPuzzlePlatformsGameInstance::OnDestroySessionComplete);
         SessionInterface->OnFindSessionsCompleteDelegates.AddUObject(this, &UPuzzlePlatformsGameInstance::OnFindSessionsComplete);
         SessionInterface->OnJoinSessionCompleteDelegates.AddUObject(this, &UPuzzlePlatformsGameInstance::OnJoinSessionComplete);
+    }
 
-        RefreshServerList();
+    if (GEngine != nullptr)
+    {
+        GEngine->OnNetworkFailure().AddUObject(this, &UPuzzlePlatformsGameInstance::OnNetworkFailure);
     }
 }
 
@@ -70,10 +75,10 @@ void UPuzzlePlatformsGameInstance::Host(FName HostName)
     if (SessionInterface.IsValid())
     {
         HostNameFromMainMenu = HostName;
-        FNamedOnlineSession* ExistedSession = SessionInterface->GetNamedSession(HostNameFromMainMenu);
+        FNamedOnlineSession* ExistedSession = SessionInterface->GetNamedSession(SESSION_NAME);
         if (ExistedSession != nullptr)
         {
-            SessionInterface->DestroySession(HostNameFromMainMenu);
+            SessionInterface->DestroySession(SESSION_NAME);
         }
         else
         {
@@ -97,12 +102,12 @@ void UPuzzlePlatformsGameInstance::CreateSession()
             SessionSettings.bIsLANMatch = false;
         }
 
-        SessionSettings.NumPublicConnections = 2;
+        SessionSettings.NumPublicConnections = 5;
         SessionSettings.bShouldAdvertise = true;
         SessionSettings.bUsesPresence = true;
-        SessionSettings.Set(TEXT("ServerName"), HostNameFromMainMenu.ToString(), EOnlineDataAdvertisementType::ViaOnlineServiceAndPing);
+        SessionSettings.Set(SERVER_NAME_SETTINGS_KEY, HostNameFromMainMenu.ToString(), EOnlineDataAdvertisementType::ViaOnlineServiceAndPing);
 
-        SessionInterface->CreateSession(0, HostNameFromMainMenu, SessionSettings);
+        SessionInterface->CreateSession(0, SESSION_NAME, SessionSettings);
     }
 }
 
@@ -201,6 +206,19 @@ void UPuzzlePlatformsGameInstance::OnJoinSessionComplete(FName SessionName, EOnJ
 }
 
 
+void UPuzzlePlatformsGameInstance::OnNetworkFailure(UWorld* World, UNetDriver* NetDriveName, ENetworkFailure::Type FailureType, const FString& ErrorString)
+{
+    UE_LOG(LogTemp, Error, TEXT("Network Failure Occurred: %s"), *ErrorString);
+    if (FailureType == ENetworkFailure::FailureReceived || FailureType == ENetworkFailure::ConnectionLost)
+    {
+        APlayerController* PlayerController = GetFirstLocalPlayerController();
+        if (!PlayerController) return;
+        PlayerController->ClientTravel("/Game/MenuSystem/Maps/MainMenu", ETravelType::TRAVEL_Absolute);
+        LoadMainMenu();
+    }
+}
+
+
 void UPuzzlePlatformsGameInstance::Join(uint32 Index) 
 {
     if (!SessionInterface.IsValid()) return;
@@ -211,11 +229,7 @@ void UPuzzlePlatformsGameInstance::Join(uint32 Index)
         MainMenu->Teardown();
     }
 
-    FString SessionSettingsServerName;
-    if (SessionSearch->SearchResults[Index].Session.SessionSettings.Get(TEXT("ServerName"), SessionSettingsServerName))
-    {
-        SessionInterface->JoinSession(0, *SessionSettingsServerName, SessionSearch->SearchResults[Index]);
-    }
+    SessionInterface->JoinSession(0, SESSION_NAME, SessionSearch->SearchResults[Index]);
 }
 
 
@@ -229,5 +243,13 @@ void UPuzzlePlatformsGameInstance::RefreshServerList()
         SessionSearch->QuerySettings.Set(SEARCH_PRESENCE, true, EOnlineComparisonOp::Equals);
         UE_LOG(LogTemp, Warning, TEXT("Starting Find Sessions..."));
         SessionInterface->FindSessions(0, SessionSearch.ToSharedRef());
+    }
+}
+
+void UPuzzlePlatformsGameInstance::StartSession()
+{
+    if (SessionInterface.IsValid())
+    {
+        SessionInterface->StartSession(SESSION_NAME);
     }
 }

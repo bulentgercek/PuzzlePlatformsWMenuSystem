@@ -42,6 +42,8 @@ private:
 
 	void OnJoinSessionComplete(FName SessionName, EOnJoinSessionCompleteResult::Type Result);
 
+	void OnNetworkFailure(UWorld* World, UNetDriver* NetDriveName, ENetworkFailure::Type FailureType, const FString& ErrorString);
+
 public:
 	UPuzzlePlatformsGameInstance(const FObjectInitializer& ObjectInitializer);
 
@@ -61,4 +63,6 @@ public:
 
 	UFUNCTION(Exec)
 	virtual void RefreshServerList() override;
+
+	void StartSession();
 };

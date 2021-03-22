@@ -2,6 +2,9 @@
 
 
 #include "LobbyGameMode.h"
+#include "GameMapsSettings.h"
+#include "TimerManager.h"
+#include "PuzzlePlatformsGameInstance.h"
 
 
 void ALobbyGameMode::PostLogin(APlayerController* NewPlayer)
@@ -12,8 +15,7 @@ void ALobbyGameMode::PostLogin(APlayerController* NewPlayer)
 
 	if (NumberOfPlayers >= 2)
 	{
-		bUseSeamlessTravel = true;
-		GetWorld()->ServerTravel("/Game/PuzzlePlatforms/Maps/Game?listen");
+		GetWorld()->GetTimerManager().SetTimer(TimerHandle, this, &ALobbyGameMode::StartGame, 10.0f);
 	}
 
 	UE_LOG(LogTemp, Warning, TEXT("PostLogin->Number of Players : %i"), NumberOfPlayers);
@@ -26,4 +28,16 @@ void ALobbyGameMode::Logout(AController* Exiting)
 	--NumberOfPlayers;
 
 	UE_LOG(LogTemp, Warning, TEXT("Logout->Number of Players : %i"), NumberOfPlayers);
+}
+
+void ALobbyGameMode::StartGame()
+{
+	bUseSeamlessTravel = true;
+
+	UPuzzlePlatformsGameInstance* GameInstance = Cast<UPuzzlePlatformsGameInstance>(AActor::GetGameInstance());
+
+	if (GameInstance == nullptr) return;
+	GameInstance->StartSession();
+
+	GetWorld()->ServerTravel("/Game/PuzzlePlatforms/Maps/Game?listen");
 }
